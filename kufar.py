@@ -16,7 +16,7 @@ def extract_brand(title):
     brands = [
         "Samsung", "Xiaomi", "Redmi", "POCO", "Huawei", "Honor",
         "Realme", "OPPO", "Vivo", "Nokia", "Motorola", "Sony",
-        "LG", "OnePlus", "Meizu", "Lenovo", "Asus", "Tecno"
+        "LG", "OnePlus", "Meizu", "Lenovo", "Asus", "Tecno", "iPhone", "Apple"
     ]
     title_lower = title.lower()
     for brand in brands:
@@ -26,7 +26,6 @@ def extract_brand(title):
 
 def get_all_listings():
     all_ads = []
-
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0",
         "Accept": "application/json",
@@ -38,12 +37,10 @@ def get_all_listings():
         url = "https://api.kufar.by/search-api/v2/search/rendered-paginated"
         params = {
             "lang": "ru",
-            "cat": "17010",           # Мобильные телефоны
-            "rgn": "6",               # Гомельская область
-            "ar": "5",                # Гомель
+            "cat": "17010",
+            "ar": "5",
             "cur": "BYR",
-            "prc": "r:0,20000",       # до 200р (в копейках)
-            "pos": "v.or:1",          # Android
+            "prc": "r:0,20000",
             "size": 50,
             "sort": "lst.d",
         }
@@ -52,11 +49,10 @@ def get_all_listings():
 
         try:
             response = requests.get(url, params=params, headers=headers, timeout=15)
-            print(f"Страница {page+1}: статус {response.status_code}")
             if response.status_code == 200:
                 data = response.json()
                 ads = data.get("ads", [])
-                print(f"  Объявлений: {len(ads)}")
+                print(f"Страница {page+1}: {len(ads)} объявлений")
                 if not ads:
                     break
                 all_ads.extend(ads)
@@ -64,10 +60,9 @@ def get_all_listings():
                 if not cursor:
                     break
             else:
-                print(f"  Ошибка: {response.text[:200]}")
                 break
         except Exception as e:
-            print(f"  Исключение: {e}")
+            print(f"Ошибка: {e}")
             break
 
     return all_ads
