@@ -1,0 +1,121 @@
+# Рыночные цены б/у И цены новых в магазине (рублей)
+PHONE_DATA = {
+    # model: (цена б/у рынок, цена новый магазин)
+    "samsung galaxy a02s": (80, 280),
+    "samsung galaxy a03": (85, 290),
+    "samsung galaxy a03s": (90, 300),
+    "samsung galaxy a04": (90, 295),
+    "samsung galaxy a04s": (100, 310),
+    "samsung galaxy a05": (110, 330),
+    "samsung galaxy a05s": (120, 350),
+    "samsung galaxy a10": (80, 320),
+    "samsung galaxy a10s": (85, 330),
+    "samsung galaxy a12": (110, 370),
+    "samsung galaxy a13": (130, 400),
+    "samsung galaxy a14": (145, 420),
+    "samsung galaxy a20": (90, 350),
+    "samsung galaxy a21s": (110, 380),
+    "samsung galaxy a22": (140, 430),
+    "samsung galaxy a23": (150, 450),
+    "samsung galaxy a30": (100, 360),
+    "samsung galaxy a31": (120, 390),
+    "samsung galaxy a32": (160, 480),
+    "samsung galaxy a33": (180, 520),
+    "samsung galaxy a50": (110, 400),
+    "samsung galaxy a51": (130, 430),
+    "samsung galaxy a52": (170, 520),
+    "samsung galaxy a53": (190, 570),
+    "samsung galaxy a72": (180, 550),
+    "samsung galaxy a7": (100, 380),
+    "samsung galaxy a8": (100, 390),
+    "samsung galaxy m21": (105, 370),
+    "samsung galaxy m31": (120, 400),
+    "samsung galaxy m32": (140, 430),
+    "samsung galaxy m33": (155, 460),
+    "samsung galaxy s20 fe": (190, 700),
+    "samsung galaxy s21 fe": (210, 800),
+    "redmi 6a": (45, 180),
+    "redmi 7a": (50, 200),
+    "redmi 9": (85, 320),
+    "redmi 9a": (75, 280),
+    "redmi 9c": (80, 295),
+    "redmi 9t": (100, 350),
+    "redmi 10": (110, 380),
+    "redmi 10a": (90, 320),
+    "redmi 10c": (100, 350),
+    "redmi 12": (140, 450),
+    "redmi 12c": (110, 370),
+    "redmi 13c": (130, 420),
+    "redmi a3": (90, 300),
+    "redmi note 8": (120, 400),
+    "redmi note 8 pro": (140, 440),
+    "redmi note 9": (105, 370),
+    "redmi note 9s": (115, 390),
+    "redmi note 9 pro": (120, 410),
+    "redmi note 10": (130, 430),
+    "redmi note 10s": (145, 460),
+    "redmi note 10 pro": (160, 500),
+    "redmi note 11": (140, 460),
+    "redmi note 11s": (155, 490),
+    "redmi note 11 pro": (175, 540),
+    "redmi note 12": (160, 510),
+    "redmi note 12s": (170, 530),
+    "redmi note 13": (190, 570),
+    "poco m3": (100, 360),
+    "poco m4": (120, 400),
+    "poco m5": (130, 420),
+    "poco x3": (130, 430),
+    "poco x4": (155, 490),
+    "xiaomi 11 lite": (170, 530),
+    "xiaomi 12 lite": (195, 600),
+    "honor 8a": (75, 280),
+    "honor 8x": (90, 330),
+    "honor 9a": (85, 310),
+    "honor 9c": (90, 320),
+    "honor 10 lite": (85, 310),
+    "honor x6": (100, 350),
+    "honor x7": (115, 380),
+    "honor x8": (130, 420),
+    "huawei p30 lite": (110, 400),
+    "huawei p40 lite": (130, 440),
+    "huawei p smart 2019": (90, 330),
+    "huawei p smart 2021": (130, 420),
+    "realme c11": (80, 290),
+    "realme c21": (90, 320),
+    "realme c25": (100, 350),
+    "realme c31": (100, 350),
+    "realme c33": (110, 370),
+    "realme c35": (120, 390),
+    "realme c55": (150, 470),
+    "realme 8": (140, 460),
+    "realme 9": (155, 490),
+    "realme 9i": (130, 430),
+    "infinix note 30": (170, 520),
+    "infinix hot 11": (100, 350),
+    "infinix hot 30": (120, 390),
+    "oneplus 3t": (130, 500),
+    "iphone 6s": (80, 400),
+    "iphone x": (150, 700),
+    "iphone xr": (200, 850),
+    "sony xperia xa2": (90, 380),
+    "tcl 30": (110, 380),
+}
+
+def get_phone_data(title):
+    """Возвращает (рыночная б/у цена, цена новый магазин) или (None, None)"""
+    title_lower = title.lower()
+    best_match = None
+    best_len = 0
+
+    for model, prices in PHONE_DATA.items():
+        if model in title_lower and len(model) > best_len:
+            best_match = prices
+            best_len = len(model)
+
+    if best_match:
+        return best_match[0], best_match[1]
+    return None, None
+
+def get_market_price(title):
+    market, _ = get_phone_data(title)
+    return market
