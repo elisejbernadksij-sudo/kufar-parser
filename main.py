@@ -4,7 +4,8 @@ import os
 from kufar import get_listings
 from bot import send_message, send_text
 from storage import load_seen, save_seen
-from market_prices import get_market_price
+from market_prices import get_phone_data
+from condition import get_condition, condition_score
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,20 +25,35 @@ def mark_first_run_done():
 
 def score_listing(item):
     price = item["price"]
-    market = get_market_price(item["title"])
+    title = item["title"]
+    body = item.get("body", "")
 
-    if market and price > 0:
-        discount = (market - price) / market * 100
-        item["market_price"] = market
+    # Цены из базы
+    market_price, new_price = get_phone_data(title)
+
+    # Состояние
+    condition_grade, condition_label = get_condition(title, body)
+    cond_score = condition_score(condition_grade)
+
+    item["market_price"] = market_price
+    item["new_price"] = new_price
+    item["condition_label"] = condition_label
+    item["condition_grade"] = condition_grade
+
+    if condition_grade == "bad":
+        item["discount"] = None
+        return -100  # в конец списка
+
+    if market_price and price > 0:
+        discount = (market_price - price) / market_price * 100
         item["discount"] = round(discount, 1)
         storage_bonus = (item.get("storage") or 32) / 32 * 5
-        return discount + storage_bonus
+        return discount + storage_bonus + cond_score
     else:
-        item["market_price"] = None
         item["discount"] = None
         storage_bonus = (item.get("storage") or 32) / 32 * 5
         price_score = max(0, 200 - price)
-        return price_score / 10 + storage_bonus
+        return price_score / 10 + storage_bonus + cond_score
 
 def main():
     logging.info("🚀 Куфар-парсер запущен")
@@ -49,7 +65,7 @@ def main():
         logging.info(f"📦 Получено объявлений: {len(listings)}")
 
         if not listings:
-            send_text("⚠️ Не удалось получить объявления с Куфара. Проверяю каждые 5 минут...")
+            send_text("⚠️ Не удалось получить объявления с Куфара.")
             mark_first_run_done()
         else:
             scored = []
