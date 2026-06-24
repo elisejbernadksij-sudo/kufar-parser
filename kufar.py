@@ -1,7 +1,6 @@
 import requests
 import re
 
-PRICE_MAX = 20000      # в копейках (200 рублей = 20000 копеек)
 MIN_STORAGE_GB = 32
 
 def extract_storage(text):
@@ -28,36 +27,48 @@ def extract_brand(title):
 def get_all_listings():
     all_ads = []
 
-    # Пробуем разные варианты запроса
-    urls_to_try = [
-        # Вариант 1 — с регионом Гомель (id=6)
-        "https://api.kufar.by/search-api/v2/search/rendered-paginated?lang=ru&cat=37&rgn=6&cur=BYR&prc=r%3A0%2C20000&size=50&sort=lst.d",
-        # Вариант 2 — без фильтра ОС
-        "https://api.kufar.by/search-api/v2/search/rendered-paginated?lang=ru&cat=37&cur=BYR&prc=r%3A0%2C20000&size=50&sort=lst.d",
-        # Вариант 3 — категория мобильные телефоны другой id
-        "https://api.kufar.by/search-api/v2/search/rendered-paginated?lang=ru&cat=1020&cur=BYR&prc=r%3A0%2C20000&size=50&sort=lst.d",
-    ]
-
     headers = {
-        "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/91.0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0",
         "Accept": "application/json",
         "Referer": "https://www.kufar.by/",
     }
 
-    for url in urls_to_try:
+    cursor = None
+    for page in range(6):
+        url = "https://api.kufar.by/search-api/v2/search/rendered-paginated"
+        params = {
+            "lang": "ru",
+            "cat": "17010",           # Мобильные телефоны
+            "rgn": "6",               # Гомельская область
+            "ar": "5",                # Гомель
+            "cur": "BYR",
+            "prc": "r:0,20000",       # до 200р (в копейках)
+            "pos": "v.or:1",          # Android
+            "size": 50,
+            "sort": "lst.d",
+        }
+        if cursor:
+            params["cursor"] = cursor
+
         try:
-            response = requests.get(url, headers=headers, timeout=15)
-            print(f"URL: {url[:80]}... Status: {response.status_code}")
+            response = requests.get(url, params=params, headers=headers, timeout=15)
+            print(f"Страница {page+1}: статус {response.status_code}")
             if response.status_code == 200:
                 data = response.json()
                 ads = data.get("ads", [])
-                print(f"Найдено объявлений: {len(ads)}")
-                if ads:
-                    all_ads.extend(ads)
+                print(f"  Объявлений: {len(ads)}")
+                if not ads:
                     break
+                all_ads.extend(ads)
+                cursor = data.get("pagination", {}).get("after")
+                if not cursor:
+                    break
+            else:
+                print(f"  Ошибка: {response.text[:200]}")
+                break
         except Exception as e:
-            print(f"Ошибка: {e}")
-            continue
+            print(f"  Исключение: {e}")
+            break
 
     return all_ads
 
