@@ -2,9 +2,8 @@ import requests
 import re
 
 MIN_STORAGE_GB = 64
-MIN_PRICE = 80  # меньше 80р — хлам
+MIN_PRICE = 80
 
-# Стоп-слова в названии
 STOP_WORDS = [
     "сим-карт", "симкарт", "sim card", "сим карт", "продам номер",
     "кнопочн", "кнопк", "бабушкофон",
@@ -15,7 +14,6 @@ STOP_WORDS = [
     "nokia 1", "nokia 2", "nokia 3", "nokia 5130", "nokia 100", "nokia 105",
 ]
 
-# Плохие модели — старьё
 BAD_MODELS = [
     "redmi 6", "redmi 6a", "redmi 7a", "redmi 5", "redmi 5a", "redmi 4",
     "redmi note 5", "redmi note 6", "redmi note 7",
@@ -29,15 +27,12 @@ BAD_MODELS = [
 
 def is_valid_phone(title, body=""):
     text = (title + " " + (body or "")).lower()
-    
     for word in STOP_WORDS:
         if word in text:
             return False
-    
     for model in BAD_MODELS:
         if model in text:
             return False
-    
     return True
 
 def extract_storage(text):
@@ -70,15 +65,18 @@ def get_all_listings():
         "Referer": "https://www.kufar.by/",
     }
 
+    # Все районы Гомеля из URL который ты скинул
+    GOMEL_AR = "v.or%3A162%2C62%2C128%2C6%2C164%2C65%2C8%2C66%2C39%2C165%2C166%2C167%2C131%2C163%2C129%2C63%2C58%2C149%2C59%2C130%2C152%2C5%2C7%2C132%2C68%2C67%2C64%2C32%2C60%2C61"
+
     cursor = None
     for page in range(6):
         url = "https://api.kufar.by/search-api/v2/search/rendered-paginated"
         params = {
             "lang": "ru",
             "cat": "17010",
-            "rgn": "6",
+            "ar": GOMEL_AR,
             "cur": "BYR",
-            "prc": "r:0,20000",
+            "prc": "r:4000,20000",
             "size": 50,
             "sort": "lst.d",
         }
@@ -90,6 +88,7 @@ def get_all_listings():
             if response.status_code == 200:
                 data = response.json()
                 ads = data.get("ads", [])
+                print(f"Страница {page+1}: {len(ads)} объявлений")
                 if not ads:
                     break
                 all_ads.extend(ads)
@@ -115,7 +114,6 @@ def get_listings():
             price = int(price_raw) / 100 if price_raw else 0
             link = f"https://www.kufar.by/item/{ad_id}"
 
-            # Фильтры
             if not is_valid_phone(title, body):
                 continue
             if price < MIN_PRICE:
