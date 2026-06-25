@@ -22,6 +22,10 @@ def send_message(item):
     storage_str = f"{item['storage']} GB" if item.get('storage') else "?"
     rank_str = f"🏆 #{item['rank']}  " if item.get('rank') else "🆕 "
 
+    # Год выпуска
+    year = item.get("year")
+    year_str = f"\n📅 Год выпуска: *{year}*" if year else ""
+
     # Выгода vs рынок б/у
     if item.get("market_price") and item.get("discount") is not None:
         if item["discount"] > 0:
@@ -32,10 +36,7 @@ def send_message(item):
         deal_str = ""
 
     # Цена нового в магазине
-    if item.get("new_price"):
-        new_str = f"\n🏪 Новый в магазине: ~{item['new_price']}р."
-    else:
-        new_str = ""
+    new_str = f"\n🏪 Новый в магазине: ~{item['new_price']}р." if item.get("new_price") else ""
 
     # Состояние
     condition_str = f"\n🔍 Состояние: {item.get('condition_label', '❓ Не указано')}"
@@ -43,7 +44,8 @@ def send_message(item):
     text = (
         f"{rank_str}*{item['title']}*\n"
         f"🏷 Марка: *{item['brand']}*\n"
-        f"💾 Память: *{storage_str}*\n"
+        f"💾 Память: *{storage_str}*"
+        f"{year_str}\n"
         f"💰 Цена: *{item['price']:.0f}р.*"
         f"{deal_str}"
         f"{new_str}"
