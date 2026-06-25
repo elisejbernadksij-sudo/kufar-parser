@@ -6,6 +6,7 @@ from bot import send_message, send_text
 from storage import load_seen, save_seen
 from market_prices import get_phone_data
 from condition import get_condition, condition_score
+from phone_db import get_year
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,32 +29,39 @@ def score_listing(item):
     title = item["title"]
     body = item.get("body", "")
 
-    # Цены из базы
     market_price, new_price = get_phone_data(title)
-
-    # Состояние
     condition_grade, condition_label = get_condition(title, body)
     cond_score = condition_score(condition_grade)
+    year = get_year(title)
 
     item["market_price"] = market_price
     item["new_price"] = new_price
     item["condition_label"] = condition_label
     item["condition_grade"] = condition_grade
+    item["year"] = year
+
+    # Бонус за свежий год
+    year_bonus = 0
+    if year:
+        if year >= 2023: year_bonus = 20
+        elif year >= 2021: year_bonus = 10
+        elif year >= 2019: year_bonus = 5
+        elif year < 2018: year_bonus = -20
 
     if condition_grade == "bad":
         item["discount"] = None
-        return -100  # в конец списка
+        return -100
 
     if market_price and price > 0:
         discount = (market_price - price) / market_price * 100
         item["discount"] = round(discount, 1)
-        storage_bonus = (item.get("storage") or 32) / 32 * 5
-        return discount + storage_bonus + cond_score
+        storage_bonus = (item.get("storage") or 64) / 64 * 5
+        return discount + storage_bonus + cond_score + year_bonus
     else:
         item["discount"] = None
-        storage_bonus = (item.get("storage") or 32) / 32 * 5
+        storage_bonus = (item.get("storage") or 64) / 64 * 5
         price_score = max(0, 200 - price)
-        return price_score / 10 + storage_bonus + cond_score
+        return price_score / 10 + storage_bonus + cond_score + year_bonus
 
 def main():
     logging.info("🚀 Куфар-парсер запущен")
@@ -77,7 +85,7 @@ def main():
             scored.sort(key=lambda x: x[0], reverse=True)
             top = scored[:TOP_COUNT]
 
-            send_text(f"🏆 Топ-{len(top)} лучших телефонов до 200р в Гомеле:")
+            send_text(f"🏆 Топ-{len(top)} лучших телефонов до 200р в Гомельской области:")
             time.sleep(1)
 
             for rank, (score, item) in enumerate(top, 1):
