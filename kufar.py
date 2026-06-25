@@ -1,13 +1,50 @@
 import requests
 import re
 
-MIN_STORAGE_GB = 32
+MIN_STORAGE_GB = 64
+MIN_PRICE = 80  # меньше 80р — хлам
+
+# Стоп-слова в названии
+STOP_WORDS = [
+    "сим-карт", "симкарт", "sim card", "сим карт", "продам номер",
+    "кнопочн", "кнопк", "бабушкофон",
+    "запчаст", "на разбор", "разборов", "не работает", "разбит",
+    "планшет", "tablet", "часы", "watch",
+    "аксессуар", "чехол", "наушник", "зарядк", "кабель", "power bank",
+    "нокиа 1", "нокиа 2", "нокиа 3", "нокиа 5", "нокиа 100", "нокиа 105",
+    "nokia 1", "nokia 2", "nokia 3", "nokia 5130", "nokia 100", "nokia 105",
+]
+
+# Плохие модели — старьё
+BAD_MODELS = [
+    "redmi 6", "redmi 6a", "redmi 7a", "redmi 5", "redmi 5a", "redmi 4",
+    "redmi note 5", "redmi note 6", "redmi note 7",
+    "samsung a10", "samsung a10s", "samsung a20", "samsung a20s",
+    "samsung a02", "samsung a03", "samsung a04",
+    "samsung j", "galaxy j",
+    "honor 7", "honor 8", "honor 8a", "honor 9s",
+    "huawei y5", "huawei y6", "huawei y7",
+    "iphone 5", "iphone 6", "iphone 7",
+]
+
+def is_valid_phone(title, body=""):
+    text = (title + " " + (body or "")).lower()
+    
+    for word in STOP_WORDS:
+        if word in text:
+            return False
+    
+    for model in BAD_MODELS:
+        if model in text:
+            return False
+    
+    return True
 
 def extract_storage(text):
     match = re.search(r'(\d+)\s*[гГgG][бБbB]', text or "")
     if match:
         return int(match.group(1))
-    match = re.search(r'\b(16|32|64|128|256|512)\b', text or "")
+    match = re.search(r'\b(64|128|256|512)\b', text or "")
     if match:
         return int(match.group(1))
     return None
@@ -16,7 +53,8 @@ def extract_brand(title):
     brands = [
         "Samsung", "Xiaomi", "Redmi", "POCO", "Huawei", "Honor",
         "Realme", "OPPO", "Vivo", "Nokia", "Motorola", "Sony",
-        "LG", "OnePlus", "Meizu", "Lenovo", "Asus", "Tecno", "iPhone", "Apple"
+        "LG", "OnePlus", "Meizu", "Lenovo", "Asus", "Tecno",
+        "Infinix", "iPhone", "Apple", "TCL", "ZTE"
     ]
     title_lower = title.lower()
     for brand in brands:
@@ -38,7 +76,7 @@ def get_all_listings():
         params = {
             "lang": "ru",
             "cat": "17010",
-            "ar": "5",
+            "rgn": "6",
             "cur": "BYR",
             "prc": "r:0,20000",
             "size": 50,
@@ -52,15 +90,12 @@ def get_all_listings():
             if response.status_code == 200:
                 data = response.json()
                 ads = data.get("ads", [])
-                print(f"Страница {page+1}: {len(ads)} объявлений")
                 if not ads:
                     break
                 all_ads.extend(ads)
                 cursor = data.get("pagination", {}).get("after")
                 if not cursor:
                     break
-            else:
-                break
         except Exception as e:
             print(f"Ошибка: {e}")
             break
@@ -79,6 +114,12 @@ def get_listings():
             price_raw = ad.get("price_byn") or ad.get("price", 0)
             price = int(price_raw) / 100 if price_raw else 0
             link = f"https://www.kufar.by/item/{ad_id}"
+
+            # Фильтры
+            if not is_valid_phone(title, body):
+                continue
+            if price < MIN_PRICE:
+                continue
 
             brand = extract_brand(title)
             storage = extract_storage(title) or extract_storage(body)
@@ -99,6 +140,7 @@ def get_listings():
                 "price": price,
                 "link": link,
                 "photo_url": photo_url,
+                "body": body,
             })
         except Exception:
             continue
